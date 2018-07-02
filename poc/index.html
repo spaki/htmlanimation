@@ -169,6 +169,11 @@
             return doSlidyTransition;
         }
 
+        function getTransictionOptions(element) {
+            var result = element.dataset.transitionOptions;
+            return result;
+        }
+
         function playTransition(elementA, elementB) {
             var time = getTransitionTime(elementB);
             var duration = getDuration(elementB, time);
@@ -236,15 +241,18 @@
         }
 
         function doSlidyTransition(elementA, elementB, transitionTime) {
+            var direction = getTransictionOptions(elementB);
+
+            if(isNullOrEmpty(direction)) 
+                direction = "left";
+
             if(!isNullOrEmpty(elementA)) {
-                setTimeout(function() { elementA.style = getSlidyStyle("left", "0", 0); }, 0);
-                setTimeout(function() { elementA.style = getSlidyStyle("left", "-100%", transitionTime); }, transitionTime);
+                setTimeout(function() { elementA.style = getSlidyStyle(direction, "0", 0); }, 0);
+                setTimeout(function() { elementA.style = getSlidyStyle(direction, "-100%", transitionTime); }, transitionTime);
             }
 
-            if(!isNullOrEmpty(elementB)) {
-                setTimeout(function() { elementB.style = getSlidyStyle("left", "100%", 0); }, 0);
-                setTimeout(function() { elementB.style = getSlidyStyle("left", "0", transitionTime); }, transitionTime);
-            }
+            setTimeout(function() { elementB.style = getSlidyStyle(direction, "100%", 0); }, 0);
+            setTimeout(function() { elementB.style = getSlidyStyle(direction, "0", transitionTime); }, transitionTime);
         }
 
 
@@ -291,10 +299,10 @@
         </div>
         <div class="flex-container">
             <div id="player" class="div-bordered">
-                <div data-transition-name="slidy" data-transition-time="1">
+                <div data-transition-name="slidy" data-transition-time="1" data-transition-options="top">
                     <video src="https://www.w3schools.com/html/mov_bbb.mp4"></video>
                 </div>
-                <div data-transition-name="slidy" data-transition-time="1" data-slide-duration="3">
+                <div data-transition-name="slidy" data-transition-time="1" data-slide-duration="3" data-transition-options="bottom">
                     <img src="http://farm6.static.flickr.com/5224/5658667829_2bb7d42a9c_m.jpg">
                 </div>
                 <div data-transition-name="fade" data-transition-time="1" data-slide-duration="3">
@@ -307,7 +315,7 @@
                         </div>
                     </div>
                 </div>
-                <div data-transition-name="fade" data-transition-time="1" >
+                <div data-transition-name="slidy" data-transition-time="1" data-transition-options="right">
                     <div class="video-composed">
                         <video src="https://www.w3schools.com/tags/movie.mp4"></video>
                         <div class="footer-display">
