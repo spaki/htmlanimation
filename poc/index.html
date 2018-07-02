@@ -1,0 +1,337 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>InsideTV</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+    <meta name="author" content="Eduardo Spaki">
+
+    <style>
+        body {
+            font-family: Helvetica,Arial,sans-serif;
+            line-height: 2em;
+            font-size: 12px;
+            padding: 0;
+            margin: 0;
+            background-color: #fff;
+            color: #3d454c;
+            text-align: justify;
+        }
+
+        header img {
+            max-height: 64px;
+        }
+
+        .clear {
+            clear: both;
+        }
+
+        .div-bordered {
+            border: 1px solid #3d454c;
+            margin: 10px;
+        }
+
+        .flex-container {
+            display: flex;
+            justify-content: center;
+            flex-flow: row;
+            flex-wrap: wrap;
+        }
+
+        #control {
+            width: 280px;
+            padding: 10px;
+        }
+
+        #player {
+            width: 480px;
+            height: 480px;
+            background-color: black;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #player > [data-transition-name] {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            display: none;
+        }
+
+        #player > [data-transition-name] > * {
+            max-height: 100%;  
+            max-width: 100%; 
+            width: auto;
+            height: auto;
+            position: absolute;  
+            top: 0;  
+            bottom: 0;  
+            left: 0;  
+            right: 0;  
+            margin: auto;
+        }
+
+
+        .video-composed video{
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+        }
+
+        .footer-display {
+            position: absolute;
+            width: 100%;
+            bottom: 0;
+
+            padding: 20px 0;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            background-color: rgba(231, 16, 16, 0.5);
+            color: #fff;
+        }
+
+
+        .composed-item {
+            margin: auto;
+            background-color: orangered; 
+            color: #fff;
+            width: 400px;
+            height: 300px;
+        }
+    </style>
+
+    <script>
+        var slideDurationId = null;
+
+        function getSlides() {
+            var elements = document.querySelectorAll("#player > [data-transition-name]");
+            return elements;
+        }
+
+        function reset(elements, defaultStyle) {
+            if(slideDurationId)
+                clearInterval(slideDurationId);
+
+            for (i = 0; i < elements.length; i++) {
+                var element = elements[i];
+                element.style = defaultStyle;
+            }                  
+        }
+
+        function getDuration(element, transition) {
+            var duration = element.dataset.slideDuration;
+            var defaultValue = 3; // default value
+            
+            if(isNullOrEmpty(duration)) {
+                var videoElement = element.querySelector("video");
+                
+                if(!isNullOrEmpty(videoElement))
+                    duration = videoElement.duration;
+            }
+
+            if(isNullOrEmpty(duration))  
+                duration = defaultValue; 
+
+            duration = (duration * 1000) - transition;
+
+            if(duration <= 0)
+                duration = defaultValue * 1000;
+
+            return duration;
+        }
+
+        function getTransitionTime(element) {
+            var transition = element.dataset.transitionTime;
+            
+            if(isNullOrEmpty(transition)) 
+                transition = 1; // default value
+
+            return transition * 1000;
+        }
+
+        function playElement(element) {
+            var videoElement = element.querySelector("video");
+                
+            if(!isNullOrEmpty(videoElement)){
+                videoElement.play();
+                return;
+            }
+        }
+
+        function getTransictionFunction(element) {
+            var transitionName = element.dataset.transitionName;
+
+            if(transitionName == "fade")
+                return doFadeTransition;
+
+            return doSlidyTransition;
+        }
+
+        function playTransition(elementA, elementB) {
+            var time = getTransitionTime(elementB);
+            var duration = getDuration(elementB, time);
+            var transictionFunction = getTransictionFunction(elementB);
+
+            playElement(elementB);
+            transictionFunction(elementA, elementB, time);
+            
+            return duration;
+        }
+
+
+        function playPlaylist(){
+            var slides = getSlides();
+
+            if(isNullOrEmpty(slides))
+                return;
+
+            reset(slides, "");
+
+            playElement(slides[0]);
+            var duration = playTransition(null, slides[0]);
+
+            var a = 0;
+            var b = 1;
+
+            var waitForDuration = function () {
+                playElement(slides[b]);
+                duration = playTransition(slides[a], slides[b]);
+
+                a = b;
+                b++;
+
+                if(slides.length == b)
+                    b = 0;
+
+                slideDurationId = setTimeout(waitForDuration, duration);
+            };
+
+            slideDurationId = setTimeout(waitForDuration, duration);
+        }
+
+
+        function getFadeStyle(opacity, interval) {
+            var result = "display: block; opacity: " + opacity + "; transition: opacity " + interval + "ms ease;";
+            return result;
+        }
+
+        function doFadeTransition(elementA, elementB, transitionTime) {
+            if(!isNullOrEmpty(elementA)) {
+                setTimeout(function() { elementA.style = getFadeStyle(1, 0); }, 0);
+                setTimeout(function() { elementA.style = getFadeStyle(0, transitionTime); }, transitionTime);
+            }
+
+            if(!isNullOrEmpty(elementB)) {
+                setTimeout(function() { elementB.style = getFadeStyle(0, 0); }, 0);
+                setTimeout(function() { elementB.style = getFadeStyle(1, transitionTime); }, transitionTime);
+            }
+        }
+
+
+        function getSlidyStyle(direction, sideValue, interval) {
+            var result = "display: block; " + direction + ": " + sideValue + "; transition: " + direction + " " + interval + "ms ease;";
+            return result;
+        }
+
+        function doSlidyTransition(elementA, elementB, transitionTime) {
+            if(!isNullOrEmpty(elementA)) {
+                setTimeout(function() { elementA.style = getSlidyStyle("left", "0", 0); }, 0);
+                setTimeout(function() { elementA.style = getSlidyStyle("left", "-100%", transitionTime); }, transitionTime);
+            }
+
+            if(!isNullOrEmpty(elementB)) {
+                setTimeout(function() { elementB.style = getSlidyStyle("left", "100%", 0); }, 0);
+                setTimeout(function() { elementB.style = getSlidyStyle("left", "0", transitionTime); }, transitionTime);
+            }
+        }
+
+
+        function setValues() {
+            var slideTransition = document.getElementById("slideTransition").value;
+            var slideDuration = document.getElementById("slideDuration").value;
+
+            var slides = getSlides();
+
+            for (i = 0; i < slides.length; i++) {
+                var slide = slides[i];
+
+                if(!isNullOrEmpty(slide.dataset.transitionTime))
+                    slide.dataset.transitionTime = slideTransition;
+
+                if(!isNullOrEmpty(slide.dataset.slideDuration))
+                    slide.dataset.slideDuration = slideDuration;
+            }   
+
+            playPlaylist();  
+        }
+
+
+        document.addEventListener("DOMContentLoaded", function(){
+            playPlaylist();
+        });
+
+
+        function isNullOrEmpty(value){
+            return typeof value === "undefined" || value == null || value == "" || (typeof value === "string" && value.trim() == "") || (Array.isArray(value) && value.length < 1);
+        }
+    </script>
+</head>
+<body>
+  <header>
+    <!--<img src="http://www.insidetv.com.br/images/imgLogoInsideTV.png">-->
+    <img src="https://s3.amazonaws.com/tinycards/image/472c7710cec29ff735abe6983757f32d">
+  </header>
+    <main>
+        <div id="playlist" class="div-bordered">
+            <p>
+                playlist
+            </p>
+        </div>
+        <div class="flex-container">
+            <div id="player" class="div-bordered">
+                <div data-transition-name="slidy" data-transition-time="1">
+                    <video src="https://www.w3schools.com/html/mov_bbb.mp4"></video>
+                </div>
+                <div data-transition-name="slidy" data-transition-time="1" data-slide-duration="3">
+                    <img src="http://farm6.static.flickr.com/5224/5658667829_2bb7d42a9c_m.jpg">
+                </div>
+                <div data-transition-name="fade" data-transition-time="1" data-slide-duration="3">
+                    <img src="http://farm6.static.flickr.com/5230/5638093881_a791e4f819_m.jpg">
+                </div>
+                <div data-transition-name="fade" data-transition-time="1" data-slide-duration="3" >
+                    <div>
+                        <div class="composed-item">
+                            <h1>teste!!!</h1>
+                        </div>
+                    </div>
+                </div>
+                <div data-transition-name="fade" data-transition-time="1" >
+                    <div class="video-composed">
+                        <video src="https://www.w3schools.com/tags/movie.mp4"></video>
+                        <div class="footer-display">
+                            Dolar: R$ 3,00
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="control" class="div-bordered">
+                <p>
+                    Duração da Transição (segundos):
+                    <br>
+                    <input id="slideTransition" type="number" min="0.1" max="10" step="0.1" value="1">
+                </p>
+                <p>
+                    Duração do Slide (segundos):
+                    <br>
+                    <input id="slideDuration" type="number" min="0.1" max="10" step="0.1" value="3">
+                </p>
+                <p>
+                    <button onclick="setValues()">Aplicar</button>
+                </p>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
