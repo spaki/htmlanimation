@@ -57,6 +57,7 @@
             height: 100%;
             position: absolute;
             display: none;
+            overflow: hidden;
         }
 
         #player > [data-transition-name] > * {
@@ -73,16 +74,25 @@
         }
 
 
+        @keyframes blinker {
+            50% {
+                opacity: 0;
+            }
+        }
+
+
         .video-composed video{
             width: 100%;
             position: absolute;
             bottom: 0;
         }
 
+
         .footer-display {
             position: absolute;
             width: 100%;
             bottom: 0;
+            overflow: hidden;
 
             padding: 20px 0;
             text-align: center;
@@ -92,6 +102,10 @@
             color: #fff;
         }
 
+        .footer-info {
+            position: relative;
+        }
+
 
         .composed-item {
             margin: auto;
@@ -99,6 +113,19 @@
             color: #fff;
             width: 400px;
             height: 300px;
+        }
+
+        .promo {
+            background-color: #fff;
+            padding: 20px;
+            text-align: center;
+
+            width: 100%;
+            position: absolute;
+        }
+
+        .promo img {
+            max-width: 300px;
         }
     </style>
 
@@ -156,8 +183,29 @@
                 
             if(!isNullOrEmpty(videoElement)){
                 videoElement.play();
-                return;
             }
+
+            var elementsWithEffects = element.querySelectorAll("[data-effect-name]");
+
+            if(!isNullOrEmpty(elementsWithEffects)){
+                for (i = 0; i < elementsWithEffects.length; i++) {
+                    var element = elementsWithEffects[i];
+                    var effectFunction = getEffectFrunction(element);
+                    effectFunction(element);
+                }
+            }
+        }
+
+        function getEffectFrunction(element) {
+            var transitionName = element.dataset.effectName;
+
+            if(transitionName == "fade")
+                return doFadeEffect;
+
+            if(transitionName == "blink")
+                return doBlinkEffect;
+
+            return doSlidyEffect;
         }
 
         function getTransictionFunction(element) {
@@ -185,7 +233,6 @@
             return duration;
         }
 
-
         function playPlaylist(){
             var slides = getSlides();
 
@@ -194,16 +241,12 @@
 
             reset(slides, "");
 
-            playElement(slides[0]);
             var duration = playTransition(null, slides[0]);
-
             var a = 0;
             var b = 1;
 
             var waitForDuration = function () {
-                playElement(slides[b]);
                 duration = playTransition(slides[a], slides[b]);
-
                 a = b;
                 b++;
 
@@ -256,6 +299,70 @@
         }
 
 
+        function getSlidyEffect(direction, sideValue, duration) {
+            var result = direction + ": " + sideValue + "; transition: " + direction + " " + duration + "ms ease;";
+            return result;
+        }
+
+        function doSlidyEffect(element) {
+            var duration = element.dataset.effectDuration * 1000;
+            var delay = element.dataset.effectDelay * 1000;
+
+            if(delay < 100)
+                delay = 100;
+
+            element.style = getSlidyEffect(element.dataset.effectOptions, "100%", 0, 0);
+            setTimeout(function() { element.style = getSlidyEffect(element.dataset.effectOptions, "0", duration); }, delay);
+            
+        }
+
+
+        function getFadeEffect(opacity, duration) {
+            var result = "opacity: " + opacity + "; transition: opacity " + duration + "ms ease;";
+            return result;
+        }
+
+        function doFadeEffect(element) {
+            var duration = element.dataset.effectDuration * 1000;
+            var delay = element.dataset.effectDelay * 1000;
+
+            if(delay < 100)
+                delay = 100;
+
+            element.style = getFadeEffect(0, 0); 
+            setTimeout(function() { element.style = getFadeEffect(1, duration); }, delay);
+        }
+
+
+
+    
+        
+        function getBlinkEffect(duration, times) {
+            var result = "animation: blinker " + duration + "ms linear " + times + ";";
+            return result;
+        }
+
+        function doBlinkEffect(element) {
+            var duration = element.dataset.effectDuration * 1000;
+            var delay = element.dataset.effectDelay * 1000;
+
+            if(delay < 100)
+                delay = 100;
+
+            element.style = "opacity: 0;"; 
+            setTimeout(function() { element.style = getBlinkEffect(duration, element.dataset.effectOptions); }, delay);
+        }
+
+
+
+
+
+
+        function isNullOrEmpty(value){
+            return typeof value === "undefined" || value == null || value == "" || (typeof value === "string" && value.trim() == "") || (Array.isArray(value) && value.length < 1);
+        }
+
+
         function setValues() {
             var slideTransition = document.getElementById("slideTransition").value;
             var slideDuration = document.getElementById("slideDuration").value;
@@ -278,11 +385,17 @@
 
         document.addEventListener("DOMContentLoaded", function(){
             playPlaylist();
+            //test();
         });
 
 
-        function isNullOrEmpty(value){
-            return typeof value === "undefined" || value == null || value == "" || (typeof value === "string" && value.trim() == "") || (Array.isArray(value) && value.length < 1);
+
+
+        function test() {
+            var slides = getSlides();
+            reset(slides, "");
+
+            var duration = playTransition(null, slides[0]);
         }
     </script>
 </head>
@@ -299,11 +412,36 @@
         </div>
         <div class="flex-container">
             <div id="player" class="div-bordered">
-                <div data-transition-name="slidy" data-transition-time="1" data-transition-options="top">
-                    <video src="https://www.w3schools.com/html/mov_bbb.mp4"></video>
+                <div data-transition-name="slidy" data-slide-duration="10" data-transition-time="1" data-transition-options="left">
+                    <div class="promo">
+                        <div data-effect-name="blink" data-effect-delay="0" data-effect-duration="0.5" data-effect-options="10">
+                            <h1>
+                                Promoção do Dia
+                            </h1>
+                        </div>
+                        <div data-effect-name="fade" data-effect-delay="3" data-effect-duration="3">
+                            <img src="http://gephardtdaily.com/wp-content/uploads/2017/07/Coca-Cola-ditches-Coke-Zero-for-reformulated-product.jpg">
+                        </div>
+                        <div class="footer-info" data-effect-name="slidy" data-effect-delay="3" data-effect-duration="2" data-effect-options="left">
+                            Coca-cola Zero R$ 3,00!!!
+                        </div>
+                    </div>
+                </div>
+                <div data-transition-name="slidy" data-transition-time="1" data-transition-options="right">
+                    <div class="video-composed">
+                        <video src="https://www.w3schools.com/tags/movie.mp4"></video>
+                        <div class="footer-display" data-effect-name="slidy" data-effect-delay="2" data-effect-duration="4" data-effect-options="left">
+                            <div class="footer-info" data-effect-name="slidy" data-effect-delay="3" data-effect-duration="3" data-effect-options="right">
+                                Dolar: R$ 3,00
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div data-transition-name="slidy" data-transition-time="1" data-slide-duration="3" data-transition-options="bottom">
                     <img src="http://farm6.static.flickr.com/5224/5658667829_2bb7d42a9c_m.jpg">
+                </div>
+                <div data-transition-name="slidy" data-transition-time="1" data-transition-options="top">
+                    <video src="https://www.w3schools.com/html/mov_bbb.mp4"></video>
                 </div>
                 <div data-transition-name="fade" data-transition-time="1" data-slide-duration="3">
                     <img src="http://farm6.static.flickr.com/5230/5638093881_a791e4f819_m.jpg">
@@ -312,14 +450,6 @@
                     <div>
                         <div class="composed-item">
                             <h1>teste!!!</h1>
-                        </div>
-                    </div>
-                </div>
-                <div data-transition-name="slidy" data-transition-time="1" data-transition-options="right">
-                    <div class="video-composed">
-                        <video src="https://www.w3schools.com/tags/movie.mp4"></video>
-                        <div class="footer-display">
-                            Dolar: R$ 3,00
                         </div>
                     </div>
                 </div>
